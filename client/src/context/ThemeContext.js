@@ -1,0 +1,55 @@
+import React, { createContext, useContext, useEffect, useState } from 'react';
+
+const ThemeContext = createContext();
+
+export const useTheme = () => {
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error('useTheme must be used within a ThemeProvider');
+  }
+  return context;
+};
+
+export const ThemeProvider = ({ children }) => {
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const savedTheme = localStorage.getItem('theme');
+    return savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  });
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (isDarkMode) {
+      root.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      root.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDarkMode]);
+
+  // Add keyboard shortcut for theme toggle
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      // Ctrl/Cmd + Shift + T for theme toggle
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'T') {
+        event.preventDefault();
+        toggleTheme();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyPress);
+    return () => {
+      document.removeEventListener('keydown', handleKeyPress);
+    };
+  }, []);
+
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode);
+  };
+
+  return (
+    <ThemeContext.Provider value={{ isDarkMode, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+};
